@@ -1,0 +1,12 @@
+.terraform*
+terraform.tfstate*
+
+terraform-provider-clickhouse
+
+node_modules/
+secrets.tfvars
+dev/
+.idea/
+*.backup
+
+**/variables.tfvars
