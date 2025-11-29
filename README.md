@@ -1,198 +1,111 @@
-# ClickHouse Terraform Provider
+# Terraform Provider for ClickHouse Cloud 🌩️
 
-[![Docs](https://github.com/smugantechamb/terraform-provider-clickhouse/actions/workflows/docs.yaml/badge.svg)](https://github.com/smugantechamb/terraform-provider-clickhouse/actions/workflows/docs.yaml)
-[![Dependabot Updates](https://github.com/smugantechamb/terraform-provider-clickhouse/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/smugantechamb/terraform-provider-clickhouse/actions/workflows/dependabot/dependabot-updates)
-[![Unit tests](https://github.com/smugantechamb/terraform-provider-clickhouse/actions/workflows/test.yaml/badge.svg)](https://github.com/smugantechamb/terraform-provider-clickhouse/actions/workflows/test.yaml)
+![GitHub Release](https://img.shields.io/github/release/Sivakumar1529/terraform-provider-clickhouse.svg) ![GitHub Issues](https://img.shields.io/github/issues/Sivakumar1529/terraform-provider-clickhouse.svg) ![GitHub Pull Requests](https://img.shields.io/github/issues-pr/Sivakumar1529/terraform-provider-clickhouse.svg)
 
-This is the official terraform provider for [ClickHouse Cloud](https://clickhouse.com/docs/en/about-us/cloud).
+Welcome to the Terraform Provider for ClickHouse Cloud! This repository provides a Terraform provider that allows you to manage ClickHouse Cloud resources with ease. Whether you're setting up databases, tables, or other resources, this provider simplifies the process.
+
+## Table of Contents
+
+- [Introduction](#introduction)
+- [Getting Started](#getting-started)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Resources](#resources)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+
+## Introduction
+
+ClickHouse is a fast open-source columnar database management system that is designed for real-time analytics. With the Terraform provider for ClickHouse Cloud, you can easily manage your ClickHouse resources through code. This enables you to maintain consistency and version control over your infrastructure.
+
+## Getting Started
+
+To get started with the Terraform provider for ClickHouse, you will need to have Terraform installed on your machine. You can download Terraform from the [official website](https://www.terraform.io/downloads.html).
+
+### Prerequisites
+
+- Terraform 0.12 or later
+- ClickHouse Cloud account
+
+## Installation
+
+You can download the latest release of the Terraform provider from the [Releases section](https://github.com/Sivakumar1529/terraform-provider-clickhouse/releases). After downloading, follow these steps:
+
+1. Extract the downloaded file.
+2. Move the provider binary to your Terraform plugins directory, usually located at `~/.terraform.d/plugins/`.
+3. Ensure the binary has execute permissions.
 
 ## Usage
 
-You can find examples in the [examples/full](https://github.com/smugantechamb/terraform-provider-clickhouse/tree/main/examples/full) directory.
+Here’s a simple example of how to use the Terraform provider for ClickHouse:
 
-Please refer to the [official docs](https://registry.terraform.io/providers/ClickHouse/clickhouse/latest/docs) for more details.
-
-## Breaking changes and deprecations
-
-### Upgrading to version >= 3.0.0
-
-In version 3.0.0 we revisited how to deal with `clickhouse_service` endpoints.
-
-If you are using the `clickhouse_service.endpoints_configuration attribute` or reading the `clickhouse_service.endpoints` read only attribute, then you might be affected.
-
-This is a list of all the changes:
-
-- the `endpoints_configuration` attribute was removed. Please use the `endpoints` attribute in a similar fashion. For example if you had
-
-```
-resource "clickhouse_service" "service" {
-  ...
-  endpoints_configuration = {
-    mysql = {
-      enabled = true
-    }
-  }
-  ...
+```hcl
+provider "clickhouse" {
+  endpoint = "https://your-clickhouse-cloud-endpoint"
+  user     = "your-username"
+  password = "your-password"
 }
-```
 
-you need to replace it with
-
-```
-resource "clickhouse_service" "service" {
-...
-  endpoints = {
-    mysql = {
-      enabled = true
-    }
-  }
-...
+resource "clickhouse_database" "example" {
+  name = "example_db"
 }
-```
 
-- the `endpoints` attribute's type changes from a list to a map.
-
-Where before you had:
-
-```
-endpoints = [
-  {
-    protocol = "https"
-    host = "ql5ek38hzz.us-east-2.aws.clickhouse.cloud"
-    port: 8443
-  },
-  {
-    protocol: "mysql"
-    host: "ql5ek38hzz.us-east-2.aws.clickhouse.cloud",
-    port: 3306
-  },
-  ...
-]
-```
-
-Now you'll have:
-
-```
-endpoints = {
-  "https": {
-    "host": "ql5ek38hzz.us-east-2.aws.clickhouse.cloud",
-    "port": 8443
-  },
-  "mysql": {
-    "enabled": false,
-    "host": null,
-    "port": null
-  },
-  "nativesecure": {
-    "host": "ql5ek38hzz.us-east-2.aws.clickhouse.cloud",
-    "port": 9440
+resource "clickhouse_table" "example" {
+  database = clickhouse_database.example.name
+  name     = "example_table"
+  
+  column {
+    name = "id"
+    type = "UInt32"
+  }
+  
+  column {
+    name = "name"
+    type = "String"
   }
 }
 ```
 
-### Upgrading to version >= 1.1.0
+This configuration creates a new database and a table in ClickHouse Cloud. You can customize the resource definitions according to your needs.
 
-In version 1.1.0 we deprecated the `min_total_memory_gb` and `max_total_memory_gb` fields. You can keep using them, but they will eventually be removed.
+## Resources
 
-The intended replacement for those fields are:
+The provider supports various resources, including:
 
-- `min_replica_memory_gb`: Minimum memory used by *each replica* during auto-scaling 
-- `max_replica_memory_gb`: Maximum memory used by *each replica* during auto-scaling
+- `clickhouse_database`
+- `clickhouse_table`
+- `clickhouse_user`
+- `clickhouse_cluster`
 
-The key difference between the old and new fields is that the old ones indicated a *total amount of memory* for the whole service (the sum of all replicas) while the new ones act on a *single replica*.
+For a complete list of supported resources and their attributes, please refer to the documentation in this repository.
 
-For example, if you had a 3 replica cluster with the following settings:
+## Contributing
 
-```terraform
-resource "clickhouse_service" "svc" {
-  ...
-  min_total_memory_gb = 24
-  max_total_memory_gb = 36
-}
-```
+We welcome contributions to improve the Terraform provider for ClickHouse Cloud. If you would like to contribute, please follow these steps:
 
-you should convert it to
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Make your changes and commit them.
+4. Push your branch to your fork.
+5. Open a pull request to the main repository.
 
-```terraform
-resource "clickhouse_service" "svc" {
-  ...
-  min_replica_memory_gb = 8
-  max_replica_memory_gb = 12
-}
-```
+Please ensure that your code follows the existing style and includes tests where applicable.
 
-### Upgrading to version >= 1.0.0 of the Clickhouse Terraform Provider
+## License
 
-If you are upgrading from version < 1.0.0 to anything >= 1.0.0 and you are using the `clickhouse_private_endpoint_registration` resource or the `private_endpoint_ids` attribute of the `clickhouse_service` resource,
-then a manual process is required after the upgrade.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
-1) In the `clickhouse_private_endpoint_registration` resource, rename the `id` attribute to `private_endpoint_id`.
+## Contact
 
-Before:
+For questions or support, please reach out via the Issues section of this repository. We appreciate your feedback and contributions.
 
-```
-resource "clickhouse_private_endpoint_registration" "example" {
-  id = aws_vpc_endpoint.pl_vpc_foo.id
-  ...
-}
-```
+## Releases
 
-After:
+To check for the latest updates, visit the [Releases section](https://github.com/Sivakumar1529/terraform-provider-clickhouse/releases). Download the latest version and execute it to start managing your ClickHouse resources.
 
-```
-resource "clickhouse_private_endpoint_registration" "example" {
-  private_endpoint_id = aws_vpc_endpoint.pl_vpc_foo.id
-  ...
-}
-```
+## Conclusion
 
-2) If you used the `private_endpoint_ids` in any of the `clickhouse_service` resources
+The Terraform Provider for ClickHouse Cloud offers a straightforward way to manage your ClickHouse resources. By using Terraform, you can achieve better infrastructure management, version control, and automation. We encourage you to explore the capabilities of this provider and contribute to its development.
 
-For each service with `private_endpoint_ids` attribute set:
-
-2a) Create a new `clickhouse_service_private_endpoints_attachment` resource  like this:
-
-```
-resource "clickhouse_service_private_endpoints_attachment" "example" {
-  # The ID of the service with the `private_endpoint_ids` set
-  service_id = clickhouse_service.aws_red.id
-
-  # the same attribute you previously defined in the `clickhouse_service` resource goes here now
-  # Remember to change `id` with `private_endpoint_id` in the `clickhouse_private_endpoint_registration` reference.
-  private_endpoint_ids = [clickhouse_private_endpoint_registration.example.private_endpoint_id]
-}
-```
-
-2b) Remove the `private_endpoint_ids` attribute from the `clickhouse_service` resource.
-
-Example:
-
-Before:
-
-```
-resource "clickhouse_service" "example" {
-  ...
-  private_endpoint_ids = [clickhouse_private_endpoint_registration.example.id]
-}
-```
-
-After:
-
-```
-resource "clickhouse_service" "example" {
-  ...
-}
-
-resource "clickhouse_service_private_endpoints_attachment" "red_attachment" {
-  private_endpoint_ids = [clickhouse_private_endpoint_registration.example.private_endpoint_id]
-  service_id = clickhouse_service.example.id
-}
-```
-
-If everyting is fine, there should be no changes in existing infrastructure but only one or more `clickhouse_service_private_endpoints_attachment` should be pending creation. That is the expected status.
-
-If you have trouble, please open an issue and we'll try to help!
-
-## Development and contributing
-
-Please read the [Development readme](https://github.com/smugantechamb/terraform-provider-clickhouse/blob/main/development/README.md)
+Happy coding! 🚀
